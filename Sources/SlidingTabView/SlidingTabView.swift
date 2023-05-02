@@ -34,6 +34,15 @@ public struct SlidingTabView : View {
 
     /// Binding the selection index which will  re-render the consuming view
     @Binding var selection: Int
+    
+    private struct SizePreferenceKey: PreferenceKey {
+            static var defaultValue: CGFloat = .zero
+            static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+                value = min(value, nextValue())
+            }
+        }
+    
+    @State private var wordHeight: CGFloat = 100
 
     /// The title of the tabs
     let tabs: [String]
@@ -114,9 +123,15 @@ public struct SlidingTabView : View {
                         self.selection = selection
                     }) {
                         HStack {
-                            Spacer()
                             Text(tab).font(self.font)
-                            Spacer()
+                                .scaledToFit()
+                                .minimumScaleFactor(0.01)
+                                .lineLimit(1)
+                                .background(GeometryReader {
+                                    Color.clear
+                                        .preference(key: SizePreferenceKey.self, value: $0.size.height)
+                                })
+                                .frame(maxWidth: .infinity, maxHeight: wordHeight)
                         }
                     }
                             .padding(.vertical, 16)
@@ -129,6 +144,7 @@ public struct SlidingTabView : View {
                                             ? self.activeTabColor
                                             : self.inactiveTabColor)
                 }
+                .onPreferenceChange(SizePreferenceKey.self, perform: { wordHeight = $0 })
             }
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
